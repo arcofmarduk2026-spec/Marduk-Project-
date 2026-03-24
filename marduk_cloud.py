@@ -1,29 +1,30 @@
-from telethon import TelegramClient, events
+import telebot
+import google.generativeai as genai
 import os
-from flask import Flask
-import threading
 
-# إعدادات بسيطة لتشغيل السيرفر
-app = Flask(__name__)
-@app.route('/')
-def hello():
-    return "Marduk is Running!"
+# --- إعدادات الملك علي ---
+# توكن البوت الخاص بك
+CHITTY_TOKEN = '8573877624:AAEfusjbU-yH70sGU-5d-N9-eF8JTTb6c4o'
 
-def run_flask():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+# مفتاح جيميناي (تأكد من وضعه هنا)
+GEMINI_API_KEY = 'ضـع_مـفـتـاح_جـيـمـيـنـاي_هـنـا'
 
-# بيانات التليجرام (سيتم ربطها لاحقاً)
-API_ID = os.environ.get('API_ID')
-API_HASH = os.environ.get('API_HASH')
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
+# إعداد ذكاء ماردوخ
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-client = TelegramClient('marduk_session', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+bot = telebot.TeleBot(CHITTY_TOKEN)
 
-@client.on(events.NewMessage(pattern='/start'))
-async def start(event):
-    await event.reply('مرحباً بك! نظام ماردوخ يعمل الآن على السحاب بنجاح. 👑')
+@bot.message_handler(func=lambda message: True)
+def marduk_response(message):
+    try:
+        # إرسال رسالة المستخدم لجيميناي
+        response = model.generate_content(message.text)
+        # رد ماردوخ على التلجرام
+        bot.reply_to(message, response.text)
+    except Exception as e:
+        print(f"حدث خطأ: {e}")
 
-if __name__ == '__main__':
-    threading.Thread(target=run_flask).start()
-    print("Marduk System Started...")
-    client.run_until_disconnected()
+if __name__ == "__main__":
+    print("الملك ماردوخ استيقظ على السيرفر...")
+    bot.polling(none_stop=True)
